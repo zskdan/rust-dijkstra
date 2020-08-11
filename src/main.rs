@@ -16,7 +16,7 @@ struct Graph {
 #[derive(Clone)]
 struct Road {
     vertex     : Vertex,
-    distance   : u32,  
+    distance   : u32,
     via_vertex : Vertex,
 }
 
@@ -35,27 +35,27 @@ impl DijkstraTable {
         for r in &self.roads {
             if r.vertex == vertex {
                 ret = r.distance;
-            } 
+            }
         }
 
         ret
     }
 
-    fn get_road(&mut self, vertex: &Vertex) -> Option<&mut Road> {
+    fn get_road_mut(&mut self, vertex: &Vertex) -> Option<&mut Road> {
         for r in &mut self.roads {
             if r.vertex == *vertex {
                 return Some(r);
-            } 
+            }
         }
 
         None
     }
 
-    fn get_road1(&self, vertex: &Vertex) -> Option<&Road> {
+    fn get_road(&self, vertex: &Vertex) -> Option<&Road> {
         for r in &self.roads {
             if r.vertex == *vertex {
                 return Some(r);
-            } 
+            }
         }
 
         None
@@ -66,7 +66,7 @@ impl DijkstraTable {
         let mut next = None;
 
         for v in &self.unvisited {
-            match self.get_road1(&v) {
+            match self.get_road(&v) {
                 None => break,
                 Some(r) => {
                     if r.distance < min {
@@ -82,7 +82,7 @@ impl DijkstraTable {
     fn remove(&mut self, v : &Vertex) {
         let mut index = 0;
         while index < self.unvisited.len() {
-            let toremove = &self.unvisited[index]; 
+            let toremove = &self.unvisited[index];
             if v == toremove {
                 self.unvisited.remove(index);
                 break
@@ -95,9 +95,9 @@ impl DijkstraTable {
 impl Road {
     fn new(from: Vertex) -> Road {
         Road {
-            vertex      : from,   
+            vertex      : from,
             distance    : u32::MAX,
-            via_vertex  : '-',   
+            via_vertex  : '-',
         }
     }
 }
@@ -105,7 +105,7 @@ impl Road {
 impl Graph {
     fn get_weight(&self, peers: (Vertex, Vertex)) -> u32 {
         let mut ret : u32 = 0;
- 
+
         for c in &self.connections {
             let (a, b) = peers;
 
@@ -134,7 +134,7 @@ impl Graph {
     fn vertices_from_connections(conns : &Vec<Connection>) -> Vec<Vertex> {
         let mut verts : Vec<Vertex> = Vec::new();
 
-        for c in conns.iter() {
+        for c in conns {
             if ! verts.contains(&c.peers.0) {
                 verts.push(c.peers.0);
             }
@@ -147,7 +147,7 @@ impl Graph {
 
     fn new(conns: Vec<Connection>) -> Graph {
         Graph {
-            vertices    : Graph::vertices_from_connections(&conns), 
+            vertices    : Graph::vertices_from_connections(&conns),
             connections : conns,
         }
     }
@@ -176,14 +176,14 @@ impl Graph {
                 Some(v) => {
                     //println!("{}##################",v);
                     for n in self.get_neighbours(v) {
-                        match table.get_road(n) {
+                        match table.get_road_mut(n) {
                             None => println!("Error"),
                             Some(rn) => {
                                 let d = self.get_weight((*v, *n));
                                 let k = d + xx.get_distance(*v);
                                 if k < rn.distance {
-                                    rn.via_vertex = *v; 
-                                    rn.distance = k; 
+                                    rn.via_vertex = *v;
+                                    rn.distance = k;
                                 }
                             }
                         }
@@ -232,15 +232,6 @@ fn main() {
         ]
     );
 
-/*
-    println!("graph: {:#?}", graph);
-    println!("");
-    println!(" Neighbours of B: {:#?}", graph.get_neighbours('B'));
-    println!("");
-    println!(" Weight of B,A: {}", graph.get_weight(('B','A')));
-    println!("");
-    graph.dijkstra('A');
-*/
     println!(" Dijkstra of 'A': {:#?}", graph.dijkstra('A'));
 
 }
