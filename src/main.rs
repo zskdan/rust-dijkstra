@@ -25,6 +25,7 @@ struct Road {
 struct DijkstraTable {
     start_vertex : Vertex,
     roads        : Vec<Road>,
+    unvisited    : Vec<Vertex>,
 }
 
 impl DijkstraTable {
@@ -48,6 +49,46 @@ impl DijkstraTable {
         }
 
         None
+    }
+
+    fn get_road1(&self, vertex: &Vertex) -> Option<&Road> {
+        for r in &self.roads {
+            if r.vertex == *vertex {
+                return Some(r);
+            } 
+        }
+
+        None
+    }
+
+    fn get_next_unvisited(&self) -> Option<&Vertex> {
+        let mut min = u32::MAX;
+        let mut next = None;
+
+        for v in &self.unvisited {
+            match self.get_road1(&v) {
+                None => break,
+                Some(r) => {
+                    if r.distance < min {
+                        min = r.distance;
+                        next = Some(v);
+                    }
+                }
+            }
+        }
+        next
+    }
+
+    fn remove(&mut self, v : &Vertex) {
+        let mut index = 0;
+        while index < self.unvisited.len() {
+            let toremove = &self.unvisited[index]; 
+            if v == toremove {
+                self.unvisited.remove(index);
+                break
+            }
+            index += 1;
+        }
     }
 }
 
@@ -115,6 +156,7 @@ impl Graph {
         let mut table = DijkstraTable {
             start_vertex : start,
             roads        : Vec::new(),
+            unvisited    : self.vertices.clone(),
         };
 
         for v in &self.vertices {
@@ -127,24 +169,29 @@ impl Graph {
             table.roads.push(road);
         }
 
-        for v in &self.vertices {
+        loop {
             let xx = table.clone();
-
-            for n in self.get_neighbours(v) {
-                match table.get_road(n) {
-                    None => println!("Error"),
-                    Some(rn) => {
-                        let d = self.get_weight((*v, *n));
-                        let k = d + xx.get_distance(*v);
-                        if k < rn.distance {
-                            rn.via_vertex = *v; 
-                            rn.distance = k; 
+            match xx.get_next_unvisited() {
+                None => break,
+                Some(v) => {
+                    //println!("{}##################",v);
+                    for n in self.get_neighbours(v) {
+                        match table.get_road(n) {
+                            None => println!("Error"),
+                            Some(rn) => {
+                                let d = self.get_weight((*v, *n));
+                                let k = d + xx.get_distance(*v);
+                                if k < rn.distance {
+                                    rn.via_vertex = *v; 
+                                    rn.distance = k; 
+                                }
+                            }
                         }
                     }
+                    table.remove(v);
+                    //println!(" {:#?} ", table);
                 }
             }
-            //println!("{}##################",v);
-            //println!(" {:#?} ", table);
         }
 
         table
