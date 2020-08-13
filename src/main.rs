@@ -13,7 +13,6 @@ struct Graph {
 }
 
 #[derive(Debug)]
-#[derive(Clone)]
 struct Road {
     vertex     : Vertex,
     distance   : u32,
@@ -21,7 +20,6 @@ struct Road {
 }
 
 #[derive(Debug)]
-#[derive(Clone)]
 struct DijkstraTable {
     start_vertex : Vertex,
     roads        : Vec<Road>,
@@ -30,7 +28,9 @@ struct DijkstraTable {
 
 impl DijkstraTable {
     fn get_distance(&self, vertex: Vertex) -> u32 {
-        self.roads.iter()
+        /* Work on the ref of ref in order to borrow an immutable ref from
+           a mutable object */
+        (&self).roads.iter()
                   .find(|road| road.vertex == vertex)
                   .map(|road| road.distance)
                   .unwrap_or(0)
@@ -46,7 +46,7 @@ impl DijkstraTable {
                   .find(|road| road.vertex == *vertex)
     }
 
-    fn get_next_unvisited(&self) -> Option<&Vertex> {
+    fn get_next_unvisited(&self) -> Option<Vertex> {
         let mut min = u32::MAX;
         let mut next = None;
 
@@ -56,7 +56,7 @@ impl DijkstraTable {
                 Some(r) => {
                     if r.distance < min {
                         min = r.distance;
-                        next = Some(v);
+                        next = Some(*v);
                     }
                 }
             }
@@ -69,8 +69,46 @@ impl DijkstraTable {
             None => (),
             Some(index) => {
                 self.unvisited.remove(index);
+
+    fn new(graph: &Graph, start: Vertex) -> DijkstraTable {
+        let mut table = DijkstraTable {
+            start_vertex : start,
+            roads        : Vec::new(),
+            unvisited    : graph.vertices.clone(),
+        };
+
+        for v in &graph.vertices {
+            let mut road = Road::new(*v);
+
+            if *v == start {
+                road.distance = 0;
+            }
+
+            table.roads.push(road);
+        }
+
+        loop {
+            match table.get_next_unvisited() {
+                None => break,
+                Some(v) => {
+                    //println!("{}##################",v);
+                    for n in graph.get_neighbours(&v) {
+                        let d = graph.get_weight((v, *n));
+                        let k = d + table.get_distance(v);
+                        let rn = table.get_road_mut(n);
+                        if let Some(rn) = rn {
+                            if k < rn.distance {
+                                rn.via_vertex = v;
+                                rn.distance = k;
+                            }
+                        }
+                    }
+                    table.remove(v);
+                    //println!(" {:#?} ", table);
+                }
             }
         }
+        table
     }
 }
 
@@ -127,50 +165,6 @@ impl Graph {
         }
     }
 
-    fn dijkstra(&self, start: Vertex) -> DijkstraTable {
-        let mut table = DijkstraTable {
-            start_vertex : start,
-            roads        : Vec::new(),
-            unvisited    : self.vertices.clone(),
-        };
-
-        for v in &self.vertices {
-            let mut road = Road::new(*v);
-
-            if v == &start {
-                road.distance = 0;
-            }
-
-            table.roads.push(road);
-        }
-
-        loop {
-            let xx = table.clone();
-            match xx.get_next_unvisited() {
-                None => break,
-                Some(v) => {
-                    //println!("{}##################",v);
-                    for n in self.get_neighbours(v) {
-                        match table.get_road_mut(n) {
-                            None => println!("Error"),
-                            Some(rn) => {
-                                let d = self.get_weight((*v, *n));
-                                let k = d + xx.get_distance(*v);
-                                if k < rn.distance {
-                                    rn.via_vertex = *v;
-                                    rn.distance = k;
-                                }
-                            }
-                        }
-                    }
-                    table.remove(v);
-                    //println!(" {:#?} ", table);
-                }
-            }
-        }
-
-        table
-    }
 }
 
 fn main() {
@@ -207,6 +201,6 @@ fn main() {
         ]
     );
 
-    println!(" Dijkstra of 'A': {:#?}", graph.dijkstra('A'));
-
+    let dt = DijkstraTable::new(&graph, 'A');
+    println!(" Dijkstra of 'A': {:#?}", dt);
 }
