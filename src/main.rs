@@ -65,8 +65,12 @@ impl DijkstraTable {
     }
 
     fn remove(&mut self, v : &Vertex) {
-        let mut index = self.unvisited.iter().position(|vertex| vertex==v);
-        self.unvisited.remove(index);
+        match self.unvisited.iter().position(|vertex| vertex==v) {
+            None => (),
+            Some(index) => {
+                self.unvisited.remove(index);
+            }
+        }
     }
 }
 
@@ -81,18 +85,11 @@ impl Road {
 }
 
 impl Graph {
-    fn get_weight(&self, peers: (Vertex, Vertex)) -> u32 {
-        let mut ret : u32 = 0;
-
-        for c in &self.connections {
-            let (a, b) = peers;
-
-            if c.peers == peers || c.peers == (b, a) {
-                ret = c.weight;
-                break;
-            }
-        }
-        ret
+    fn get_weight(&self, (a, b): (Vertex, Vertex)) -> u32 {
+        self.connections.iter()
+                        .find(|c| c.peers == (a,b) || c.peers == (b,a))
+                        .map(|c| c.weight)
+                        .unwrap_or(0)
     }
 
     fn get_neighbours(&self, vertex: &Vertex) -> Vec<&Vertex> {
