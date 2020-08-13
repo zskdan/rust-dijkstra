@@ -64,11 +64,12 @@ impl DijkstraTable {
         next
     }
 
-    fn remove(&mut self, v : &Vertex) {
-        match self.unvisited.iter().position(|vertex| vertex==v) {
-            None => (),
-            Some(index) => {
-                self.unvisited.remove(index);
+    fn remove(&mut self, v : Vertex) {
+        let index = self.unvisited.iter().position(|vertex| *vertex==v);
+        if let Some(index) = index {
+            self.unvisited.remove(index);
+        }
+    }
 
     fn new(graph: &Graph, start: Vertex) -> DijkstraTable {
         let mut table = DijkstraTable {
