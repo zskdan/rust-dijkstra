@@ -30,35 +30,20 @@ struct DijkstraTable {
 
 impl DijkstraTable {
     fn get_distance(&self, vertex: Vertex) -> u32 {
-        let mut ret = 0;
-
-        for r in &self.roads {
-            if r.vertex == vertex {
-                ret = r.distance;
-            }
-        }
-
-        ret
+        self.roads.iter()
+                  .find(|road| road.vertex == vertex)
+                  .map(|road| road.distance)
+                  .unwrap_or(0)
     }
 
     fn get_road_mut(&mut self, vertex: &Vertex) -> Option<&mut Road> {
-        for r in &mut self.roads {
-            if r.vertex == *vertex {
-                return Some(r);
-            }
-        }
-
-        None
+        self.roads.iter_mut()
+                  .find(|road| road.vertex == *vertex)
     }
 
     fn get_road(&self, vertex: &Vertex) -> Option<&Road> {
-        for r in &self.roads {
-            if r.vertex == *vertex {
-                return Some(r);
-            }
-        }
-
-        None
+        self.roads.iter()
+                  .find(|road| road.vertex == *vertex)
     }
 
     fn get_next_unvisited(&self) -> Option<&Vertex> {
@@ -80,15 +65,8 @@ impl DijkstraTable {
     }
 
     fn remove(&mut self, v : &Vertex) {
-        let mut index = 0;
-        while index < self.unvisited.len() {
-            let toremove = &self.unvisited[index];
-            if v == toremove {
-                self.unvisited.remove(index);
-                break
-            }
-            index += 1;
-        }
+        let mut index = self.unvisited.iter().position(|vertex| vertex==v);
+        self.unvisited.remove(index);
     }
 }
 
