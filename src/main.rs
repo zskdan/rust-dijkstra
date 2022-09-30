@@ -21,7 +21,6 @@ struct Road {
 
 #[derive(Debug)]
 struct DijkstraTable {
-    start_vertex : Vertex,
     roads        : Vec<Road>,
     unvisited    : Vec<Vertex>,
 }
@@ -73,7 +72,6 @@ impl DijkstraTable {
 
     fn new(graph: &Graph, start: Vertex) -> DijkstraTable {
         let mut table = DijkstraTable {
-            start_vertex : start,
             roads        : Vec::new(),
             unvisited    : graph.vertices.clone(),
         };
